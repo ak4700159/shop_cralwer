@@ -1,0 +1,6 @@
+build
+dist
+imgs
+results
+**/__pycache__/**
+app.spec
