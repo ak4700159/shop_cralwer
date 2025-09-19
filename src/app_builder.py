@@ -4,6 +4,7 @@ import FreeSimpleGUI as sg
 import threading
 from app_process import *
 from utils import ensure_dir
+import webbrowser
 
 # Layout 기본 설정
 sg.theme("SystemDefaultForReal")
@@ -16,7 +17,7 @@ ICON_PATH = os.path.join(os.path.dirname(__file__), "icon.ico")
 class AppBuilder:
     def __init__(self):
         self.log_q: queue.Queue[str] = queue.Queue()
-        self.latest_results: list[dict] = []  # [{"shop":..., "path":...}]
+        self.latest_results: list[str] = []  # [path path .... ], 크롤링 결과 저장 파일 경로
         self.running = False
         self.total_shops = 0
         self.processed = 0
@@ -124,14 +125,14 @@ class AppBuilder:
     def exec_event_loop(self):
         """
         발생할 수 있는 전체 이벤트 목록
-        1. -EXAMPLE-
-        2. -PERIOD_D-, -PERIOD_W-, -PERIOD_M-
-        3. -START-
-        4. -STOP-
-        5. -STEP_DONE-
-        6. -ALL_DONE-
-        7. -OPENXLS-
-        8. 선택 셀 복사, 선택 행 복사, URL 복사
+            1. -EXAMPLE- : 상점 예시 추가
+            2. -PERIOD_D-, -PERIOD_W-, -PERIOD_M- : 기간 변경
+            3. -START- : 수집 시작 버튼 
+            4. -STOP- : 중단 버튼
+            5. -STEP_DONE- : 상점 하나 크롤링 완료
+            6. -ALL_DONE- : 모든 크롤링 완료
+            7. -OPENXLS- : 엑셀 파일 열기
+            8. 선택 셀 복사, 선택 행 복사, URL 복사
         """
         while True:
             # 100ms 마다 프레임에서 발생한 이벤트를 읽는다 
@@ -160,6 +161,7 @@ class AppBuilder:
                 # 입력된 상점이름 정규화
                 shops = [normalize_shop(s) for s in values["-INPUT-"].splitlines()]
                 shops = [s for s in shops if s]
+                # 상점을 아무것도 추가하지 않고 수집 시작할 경우
                 if not shops:
                     sg.popup_error("상점 이름(또는 URL)을 한 줄에 하나씩 입력하세요.")
                     continue
@@ -168,13 +170,14 @@ class AppBuilder:
                 ensure_dir(outdir)
 
                 # 상태 초기화
-                self.latest_results.clear()
                 total_shops = len(shops)
                 processed = 0
                 self.running = True
+                self.window["-TABLE-"].update(values=self.preview_rows)
                 self.window["-STOP-"].update(disabled=False)
                 self.window["-OPENXLS-"].update(disabled=True)
                 self.window["-PROG-"].update(0)
+
                 self.log(f"[INFO] 총 {total_shops}개 작업(순차) 시작 / period={self.current_period}")
 
                 # 단일 워커 스레드 시작
@@ -190,14 +193,17 @@ class AppBuilder:
 
             # 한 상점 완료 시
             if event == "-STEP_DONE-":
-                payload = values["-STEP_DONE-"]  # {"shop":..., "path":...}
+                payload = values["-STEP_DONE-"]  # save path 추출
                 self.latest_results.append(payload)
+                # 진행 퍼센트 업데이트(로그창)
                 processed += 1
                 pct = int((processed / max(1, total_shops)) * 100)
                 self.window["-PROG-"].update(pct)
 
-                # ✅ 미리보기: 이번에 끝난 파일만 읽어서 누적
-                new_rows = rows_from_one_file(payload.get("path"), payload.get("shop"))
+                # 미리보기: 이번에 끝난 파일만 읽어서 누적
+                # 현재 중간 과정마다 실행된 결과는 확인할 수 없다. 
+                # 나중에 처리해보셈
+                new_rows = rows_from_one_file(payload)
                 if new_rows:
                     self.preview_rows.extend(new_rows)
                     self.window["-TABLE-"].update(values=self.preview_rows)
@@ -213,9 +219,9 @@ class AppBuilder:
 
             if event == "-OPENXLS-":
                 if self.latest_results:
-                    p = self.latest_results[-1]["path"]  # 최근 파일
+                    p = self.latest_results[-1]  # 최근 파일
                     try:
-                        self.webbrowser.open(p)
+                        webbrowser.open(p)
                     except Exception:
                         sg.popup_ok(f"엑셀 위치: {p}")
 

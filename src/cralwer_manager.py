@@ -22,7 +22,7 @@ class CrawlerManager:
                 cls._instance.period = period
             return cls._instance
 
-    def run_shop(self, shop_name: str):
+    def run_shop(self, shop_name: str) -> Crawler:
         """
         단일 Crawler 인스턴스를 재사용하되,
         shop_name/period/save_path를 갱신해서 실행합니다.
@@ -34,7 +34,7 @@ class CrawlerManager:
             self._crawler.shop_name = shop_name
             self._crawler.period = self.period
             self._crawler.results = []
-            self._crawler._images = []
+            self._crawler.images = []
             self._crawler._snap = []
             # 저장 경로가 바뀔 수 있으니 보장
             ensure_dir(self.save_path)

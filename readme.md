@@ -1,3 +1,7 @@
+# Qoo10 간단 크롤러
+- 각 상점별 Top5 아이템을 자동으로 추출해 이미지 파일로 저장
+
+
 # 개발환경
 - python==3.11.13
 - 가상환경(conda) + pip 사용
@@ -6,19 +10,17 @@
         conda activate shop
         pip install -r requirements
 
-- 
 
 
 # exe 만들기 (PyInstaller)
 
-설치
+- 설치 명령어
 
-    pip install -U pyinstaller
+      pip install -U pyinstaller
 
 
-프로젝트 루트에서 빌드
 
-- 콘솔 숨기고 단일 파일로 빌드 (권장)
+- 콘솔 숨기고 단일 파일로 빌드 명령어 (권장) 
 
        pyinstaller --noconsole --onefile --name Qoo10Crawler app.py
 

@@ -1,16 +1,8 @@
 import os
 import re
-import requests
 import pathlib
-import urllib.request
-import pandas as pd
 
 from selenium.webdriver.common.by import By
-from item import ItemRow
-from openpyxl import load_workbook
-from openpyxl.drawing.image import Image as XLImage
-from PIL import Image as PILImage
-from dataclasses import asdict
 from datetime import timedelta
 
 def ensure_dir(path: str | os.PathLike) -> str:
@@ -34,7 +26,6 @@ def try_attr(parent, sel, attr):
     except: return ""
 
 def fetch_image_bytes(url: str) -> bytes:
-    # urllib.request 대신 selenium로도 가능하지만 간단히 requests/urllib로 받아옵니다.
     # utils에 같은 함수가 없다면 아래 구현을 사용하세요.
     import urllib.request
     with urllib.request.urlopen(url) as resp:
@@ -67,7 +58,7 @@ def autosize_text_columns(ws, skip_letters: set[str]):
             v = "" if cell.value is None else str(cell.value)
             if len(v) > max_len:
                 max_len = len(v)
-        ws.column_dimensions[letter].width = min(60, max(10, max_len + 2))
+        ws.column_dimensions[letter].width = min(60, max(10, max_len + 10))
 
 def timer(func):
     import time
