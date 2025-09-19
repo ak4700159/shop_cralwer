@@ -1,6 +1,7 @@
 build
 dist
 imgs
+data
 results
 **/__pycache__/**
 app.spec
